@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IoT Hub Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <div class="dashboard-wrapper">
+    <div class="dashboard-container">
+      
+      <!-- Left Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <!-- Mobile with home silhouette SVG -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+              <path d="M12 18h.01" />
+              <path d="M9 10l3-3 3 3" />
+              <path d="M9 14v-2h6v2" />
+            </svg>
+          </div>
+        </div>
+        <ul class="sidebar-menu">
+          <li class="active">
+            <a href="/dashboard">
+              <span>📊</span> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/">
+              <span>⚙️</span> Devices
+            </a>
+          </li>
+          <li>
+            <a href="/smarthome">
+              <span>🏠</span> Smart Home
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        
+        <!-- Header -->
+        <header class="main-header">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search devices or sensors..." id="deviceSearch" oninput="filterSensorTable()" />
+          </div>
+          <div class="date-display" id="currentDate">
+            <!-- Loaded dynamically via JS -->
+            Loading Date...
+          </div>
+        </header>
+
+        <!-- Sensor Categories Summary Grid -->
+        <section>
+          <h2 class="section-title">Rooms Overview</h2>
+          <div id="categoriesGrid" class="rooms-grid">
+            <!-- Category cards are generated dynamically from the central sensor registry -->
+          </div>
+        </section>
+
+        <!-- Widgets section (Temp level, Humidity arrow widget, Dial gauge) -->
+        <section class="widgets-grid">
+          
+          <div class="widgets-col-left">
+            <!-- Indoor Temperature Widget -->
+            <div class="widget-card temp-widget">
+              <div class="widget-body">
+                <div class="widget-icon-bg">🌡️</div>
+                <div class="widget-info">
+                  <span class="widget-label">Indoor Temperature</span>
+                  <span class="widget-value" id="primaryTemp">+0°C</span>
+                </div>
+                <div class="level-indicator-vertical">
+                  <div class="level-ticks">
+                    <span>50</span>
+                    <span>25</span>
+                    <span>0</span>
+                  </div>
+                  <div class="level-bar-container">
+                    <div class="level-bar" id="tempLevelBar" style="height: 50%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Humidity Widget -->
+            <div class="widget-card humidity-widget">
+              <div class="widget-body">
+                <div class="widget-icon-bg">💧</div>
+                <div class="widget-info">
+                  <span class="widget-label">Humidity Level</span>
+                  <span class="widget-value" id="primaryHum">0%</span>
+                </div>
+                <div class="humidity-arrows">
+                  <div class="arrow-btn" onclick="adjustSimulatedReading('H', 5)">▲</div>
+                  <div class="arrow-btn" onclick="adjustSimulatedReading('H', -5)">▼</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gauge Dial Widget (Pressure Widget scaled) -->
+          <div class="widget-card gauge-widget">
+            <div class="widget-card-header">
+              <span class="widget-label" style="margin-bottom: 0;">System Pressure</span>
+              <span class="more-options">•••</span>
+            </div>
+            <div class="gauge-container">
+              <div class="gauge-dial">
+                <svg viewBox="0 0 100 50" class="gauge-svg">
+                  <!-- Background arc -->
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#f0f1f7" stroke-width="8" stroke-linecap="round" />
+                  <!-- Foreground arc -->
+                  <path id="gaugePath" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#gaugeGradient)" stroke-width="8" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="125.6" />
+                  
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#25228c" />
+                      <stop offset="100%" stop-color="#ff922b" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="gauge-text">
+                  <span class="gauge-val" id="primaryPressVal">1013</span>
+                  <span class="gauge-unit" id="primaryPressUnit">hPa</span>
+                </div>
+              </div>
+              <div class="gauge-limits">
+                <span>900 hPa</span>
+                <span>1100 hPa</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Simulated History Chart -->
+        <section class="chart-card">
+          <div class="chart-header">
+            <h3>System Metric History</h3>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-dot temp"></span> Temp</div>
+              <div class="legend-item"><span class="legend-dot hum"></span> Humidity</div>
+              <div class="legend-item"><span class="legend-dot press"></span> Pressure</div>
+            </div>
+          </div>
+          <div class="bar-chart" id="barChartContainer">
+            <!-- Simulated bars generated dynamically or styled -->
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 60%"></div>
+                <div class="chart-bar hum" style="height: 45%"></div>
+                <div class="chart-bar press" style="height: 70%"></div>
+              </div>
+              <span class="column-label">Mon</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 70%"></div>
+                <div class="chart-bar hum" style="height: 55%"></div>
+                <div class="chart-bar press" style="height: 80%"></div>
+              </div>
+              <span class="column-label">Tue</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 65%"></div>
+                <div class="chart-bar hum" style="height: 50%"></div>
+                <div class="chart-bar press" style="height: 75%"></div>
+              </div>
+              <span class="column-label">Wed</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 80%"></div>
+                <div class="chart-bar hum" style="height: 60%"></div>
+                <div class="chart-bar press" style="height: 85%"></div>
+              </div>
+              <span class="column-label">Thu</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 75%"></div>
+                <div class="chart-bar hum" style="height: 65%"></div>
+                <div class="chart-bar press" style="height: 90%"></div>
+              </div>
+              <span class="column-label">Fri</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 50%"></div>
+                <div class="chart-bar hum" style="height: 40%"></div>
+                <div class="chart-bar press" style="height: 60%"></div>
+              </div>
+              <span class="column-label">Sat</span>
+            </div>
+            <div class="chart-column">
+              <div class="bar-group">
+                <div class="chart-bar temp" style="height: 55%"></div>
+                <div class="chart-bar hum" style="height: 45%"></div>
+                <div class="chart-bar press" style="height: 65%"></div>
+              </div>
+              <span class="column-label">Sun</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Connected Sensors Grid / Table -->
+        <section class="list-card">
+          <h3>Connected Sensors List</h3>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Device ID</th>
+                  <th>Sensor Type</th>
+                  <th>Current Reading</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="sensorTable">
+                <!-- Rows injected dynamically by Javascript -->
+              </tbody>
+            </table>
+            <p id="noSensors" class="empty-msg" style="display: none;">No sensors connected. Go to the "Devices" tab to add sensors.</p>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Right Sidebar (User & Quick Commands) -->
+      <aside class="right-sidebar">
+        
+        <!-- Profile Header -->
+        <div class="profile-section">
+          <div class="profile-icons">
+            <button class="icon-btn" onclick="alert('No new chats.');">💬</button>
+            <button class="icon-btn" onclick="alert('All systems normal.');">🔔</button>
+          </div>
+          <div class="profile-avatar">
+            <img src="/static/avatar.png" alt="Annie Avatar" />
+          </div>
+          <div class="profile-welcome">
+            <h4>Welcome Annie!</h4>
+            <p>Smart Hub Administrator</p>
+          </div>
+        </div>
+
+        <!-- My Devices Quick Controls / Add Section -->
+        <div class="my-devices-section">
+          <div class="section-header">
+            <h5>My Devices</h5>
+            <span class="more-options" style="cursor: pointer;" onclick="window.location.href='/'">•••</span>
+          </div>
+          <div class="devices-quick-grid">
+            
+            <div class="quick-device-card ac" onclick="window.location.href='/'">
+              <div class="device-icon">❄️</div>
+              <span class="device-name">AC (Temp)</span>
+            </div>
+
+            <div class="quick-device-card router" onclick="window.location.href='/'">
+              <div class="device-icon">🌐</div>
+              <span class="device-name">Router (Hub)</span>
+            </div>
+
+            <div class="quick-device-card music" onclick="window.location.href='/'">
+              <div class="device-icon">🔊</div>
+              <span class="device-name">Speaker (Motion)</span>
+            </div>
+
+            <div class="quick-device-card lamps" onclick="window.location.href='/'">
+              <div class="device-icon">💡</div>
+              <span class="device-name">Lamps (Press)</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Home Illustration graphic -->
+        <div class="illustration-section">
+          <img src="/static/relax_illustration.png" alt="Relaxing in Smart Home" />
+        </div>
+
+      </aside>
+
+    </div>
+  </div>
+
+  <script>
+    // Set dynamic date
+    function setLocalDate() {
+      var options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      var today = new Date();
+      document.getElementById('currentDate').textContent = today.toLocaleDateString("en-US", options);
+    }
+    setLocalDate();
+
+    var activeFilter = null;
+    var allSensors = [];
+    var sensorTypesMeta = {};
+
+    function buildCategoryCards(types) {
+      var grid = document.getElementById('categoriesGrid');
+      grid.innerHTML = '';
+      types.forEach(function(t) {
+        var name = t.name;
+        // Card id safe name
+        var card = document.createElement('div');
+        card.className = 'room-card';
+        card.id = 'catCard_' + name;
+        card.onclick = function() { filterType(name); };
+
+        var iconHtml = "<div class='room-card-header'><div class='room-icon " + (name.toLowerCase() + '-icon') + "'>" + (t.icon || '🔌') + "</div><span class='more-options'>•••</span></div>";
+        var infoHtml = "<div class='room-info'><span class='room-name'>" + name + "</span>" +
+                       "<div class='room-progress-container'><span class='room-progress-value' id='catCount_" + name + "'>0 Devs</span>" +
+                       "<div class='progress-ring-wrapper'><svg class='progress-ring' width='44' height='44'>" +
+                       "<circle stroke='#f0f1f7' stroke-width='4' fill='transparent' r='16' cx='22' cy='22'/><circle id='catRing_" + name + "' class='progress-ring-circle' stroke-dasharray='100.5' stroke-dashoffset='100.5' stroke-width='4' stroke-linecap='round' fill='transparent' r='16' cx='22' cy='22'/></svg></div></div></div>";
+
+        card.innerHTML = iconHtml + infoHtml;
+        grid.appendChild(card);
+      });
+    }
+
+    // Filter by type (Category card click)
+    function filterType(type) {
+      if (activeFilter === type) {
+        activeFilter = null;
+        document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected-room'));
+      } else {
+        activeFilter = type;
+        document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected-room'));
+        var el = document.getElementById('catCard_' + type);
+        if (el) el.classList.add('selected-room');
+      }
+      renderTableRows();
+    }
+
+    // Search filter
+    function filterSensorTable() {
+      renderTableRows();
+    }
+
+    function renderTableRows() {
+      var tbody = document.getElementById("sensorTable");
+      var noSensors = document.getElementById("noSensors");
+      var query = document.getElementById("deviceSearch").value.toLowerCase();
+      tbody.innerHTML = "";
+
+      var filtered = allSensors.filter(function(s) {
+        if (activeFilter && s.name !== activeFilter) return false;
+        if (query && s.id.toLowerCase().indexOf(query) === -1 && s.name.toLowerCase().indexOf(query) === -1) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        noSensors.style.display = "block";
+      } else {
+        noSensors.style.display = "none";
+        filtered.forEach(function(s) {
+          var row = document.createElement("tr");
+          var badgeClass = "badge-active";
+          if (s.status === "Offline") badgeClass = "badge-offline";
+          if (s.status === "Low Battery") badgeClass = "badge-low";
+          row.innerHTML = "<td><strong>" + s.id + "</strong></td>" +
+                          "<td>" + s.name + " Sensor</td>" +
+                          "<td>" + s.reading + "</td>" +
+                          "<td><span class='badge " + badgeClass + "'>" + s.status + "</span></td>";
+          tbody.appendChild(row);
+        });
+      }
+    }
+
+    // Helper to increment/decrement sensor values from dashboard
+    function adjustSimulatedReading(prefixOrName, delta) {
+      // Determine prefix
+      var finalPrefix = prefixOrName;
+      if (sensorTypesMeta[prefixOrName]) {
+        finalPrefix = sensorTypesMeta[prefixOrName].prefix || prefixOrName[0].toUpperCase();
+      }
+      var target = allSensors.find(s => s.id.startsWith(finalPrefix));
+      if (!target) {
+        alert('Please add the required sensor in the Devices page first!');
+        return;
+      }
+      var currentVal = parseFloat(target.reading) || 0;
+      var newVal = currentVal + delta;
+      fetch("/api/update_sensor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: target.id, reading: newVal.toString(), status: target.status })
+      })
+      .then(res => res.json())
+      .then(() => refreshDashboard());
+    }
+
+    function refreshDashboard() {
+      fetch("/api/sensors")
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          var summary = data.summary;
+          allSensors = data.sensors;
+
+          // Update category counts and rings
+          Object.keys(sensorTypesMeta).forEach(function(typeName) {
+            var count = allSensors.filter(s => s.name === typeName).length;
+            var activeCount = allSensors.filter(s => s.name === typeName && s.status === 'Active').length;
+            var el = document.getElementById('catCount_' + typeName);
+            if (el) el.textContent = count + ' Dev' + (count !== 1 ? 's' : '');
+            var ring = document.getElementById('catRing_' + typeName);
+            if (ring) {
+              var activePct = count > 0 ? (activeCount / count) : 0;
+              ring.style.strokeDashoffset = 100.5 - (activePct * 100.5);
+            }
+          });
+
+          // Update primary widgets (Temperature, Humidity, Pressure) if present
+          var firstTemp = allSensors.find(s => s.name === 'Temperature');
+          if (firstTemp) {
+            document.getElementById("primaryTemp").textContent = firstTemp.reading;
+            var tempVal = parseFloat(firstTemp.reading) || 0;
+            var barHeight = Math.min(Math.max((tempVal / 50) * 100, 5), 100);
+            document.getElementById("tempLevelBar").style.height = barHeight + "%";
+          } else {
+            document.getElementById("primaryTemp").textContent = "-- °C";
+            document.getElementById("tempLevelBar").style.height = "0%";
+          }
+
+          var firstHum = allSensors.find(s => s.name === 'Humidity');
+          if (firstHum) {
+            document.getElementById("primaryHum").textContent = firstHum.reading;
+          } else {
+            document.getElementById("primaryHum").textContent = "-- %";
+          }
+
+          var firstPress = allSensors.find(s => s.name === 'Pressure');
+          var gaugePath = document.getElementById("gaugePath");
+          if (firstPress) {
+            var pressVal = parseFloat(firstPress.reading) || 1013;
+            document.getElementById("primaryPressVal").textContent = Math.round(pressVal);
+            // Use registry unit if available
+            var pressUnit = (sensorTypesMeta['Pressure'] && sensorTypesMeta['Pressure'].unit) || 'hPa';
+            document.getElementById("primaryPressUnit").textContent = pressUnit;
+            var pressPct = Math.min(Math.max((pressVal - 900) / 200, 0), 1);
+            gaugePath.style.strokeDashoffset = 125.6 - (pressPct * 125.6);
+          } else {
+            document.getElementById("primaryPressVal").textContent = "N/A";
+            document.getElementById("primaryPressUnit").textContent = "";
+            gaugePath.style.strokeDashoffset = 125.6; // empty
+          }
+
+          // Populate tables
+          renderTableRows();
+
+          // Animate chart bars subtly
+          var chartBars = document.querySelectorAll(".chart-bar");
+          chartBars.forEach((bar, idx) => {
+            var currentH = parseFloat(bar.style.height) || 50;
+            var variance = (Math.random() - 0.5) * 4;
+            var newH = Math.min(Math.max(currentH + variance, 20), 95);
+            bar.style.height = newH + "%";
+          });
+        });
+    }
+
+    // Fetch sensor types metadata and build category cards, then start polling
+    fetch('/api/sensor_types')
+      .then(res => res.json())
+      .then(function(data) {
+        sensorTypesMeta = {};
+        data.types.forEach(function(t) { sensorTypesMeta[t.name] = t; });
+        buildCategoryCards(data.types);
+        refreshDashboard();
+        setInterval(refreshDashboard, 2000);
+      });
+  </script>
+</body>
+</html>

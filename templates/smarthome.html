@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smart Home Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <div class="dashboard-container">
+        <aside class="sidebar">
+          <div class="sidebar-logo"><div class="logo-icon"></div></div>
+          <ul class="sidebar-menu">
+            <li><a href="/dashboard">📊 Dashboard</a></li>
+            <li><a href="/">⚙️ Devices</a></li>
+            <li class="active"><a href="/smarthome">🏠 Smart Home</a></li>
+          </ul>
+        </aside>
+
+        <main class="main-content">
+          <header class="main-header">
+            <div class="search-box"><span class="search-icon">🔍</span>
+              <input type="text" placeholder="Search..." id="searchBox" oninput="render()" />
+            </div>
+            <div class="date-display" id="currentDate">Loading Date...</div>
+          </header>
+
+          <section>
+            <h2 class="section-title">Smart Home Live View</h2>
+            <div class="smarthome-layout">
+              <div class="sensor-column">
+                <h3>Live Sensors</h3>
+                <div id="liveSensors" class="sensor-grid smarthome-grid"></div>
+              </div>
+
+              <div class="appliance-column">
+                <h3>Smart Appliances</h3>
+                <div id="gasBanner" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;background:#ffecec;color:#7a0b0b;font-weight:700"></div>
+                <div id="appliances" class="devices-quick-grid"></div>
+                <h4 style="margin-top:16px">Event Timeline</h4>
+                <div id="eventTimeline" style="max-height:320px;overflow:auto;padding-top:8px"></div>
+              </div>
+            </div>
+          </section>
+
+        </main>
+
+        <aside class="right-sidebar">
+          <div class="profile-section">
+            <div class="profile-avatar"><img src="/static/avatar.png" alt="Avatar"/></div>
+            <div class="profile-welcome"><h4>Welcome Annie!</h4><p>Smart Hub Admin</p></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script src="/static/smarthome.js"></script>
+    <script>
+      function setLocalDate(){var opts={weekday:'long',day:'numeric',month:'long',year:'numeric'};document.getElementById('currentDate').textContent=new Date().toLocaleDateString('en-US',opts);}setLocalDate();
+    </script>
+  </body>
+</html>

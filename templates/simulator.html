@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensor Simulator</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <div class="dashboard-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+          <div class="sidebar-logo">
+            <div class="logo-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <path d="M12 18h.01" />
+                <path d="M9 10l3-3 3 3" />
+                <path d="M9 14v-2h6v2" />
+              </svg>
+            </div>
+          </div>
+          <ul class="sidebar-menu">
+            <li>
+              <a href="/dashboard"> <span>📊</span> Dashboard </a>
+            </li>
+            <li class="active">
+              <a href="/"> <span>⚙️</span> Devices </a>
+            </li>
+            <li>
+              <a href="/smarthome"> <span>🏠</span> Smart Home </a>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+          <!-- Header -->
+          <header class="main-header">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search simulated devices..."
+                id="deviceSearch"
+                oninput="filterSimulatorCards()"
+              />
+            </div>
+            <div class="date-display" id="currentDate">Loading Date...</div>
+          </header>
+
+          <!-- Page Intro -->
+          <div>
+            <h2 class="section-title">Devices & Sensors Control Panel</h2>
+            <p
+              style="
+                font-size: 14px;
+                color: #8c8da7;
+                margin-top: 4px;
+                font-weight: 500;
+              "
+            >
+              Add virtual hardware sensors to the IoT Hub, and manually simulate
+              their live telemetries.
+            </p>
+          </div>
+
+          <!-- Add Sensor Form Widget -->
+          <section class="simulator-form-card">
+            <h3
+              style="
+                font-size: 16px;
+                font-weight: 700;
+                color: #1b1a3f;
+                margin-bottom: 5px;
+              "
+            >
+              Add Virtual Sensor
+            </h3>
+            <div class="form-row">
+              <label for="sensorType">Sensor Hardware Type</label>
+              <select id="sensorType">
+                <option value="Temperature">Temperature Sensor (🌡️)</option>
+                <option value="Humidity">Humidity Sensor (💧)</option>
+                <option value="Pressure">Pressure Sensor (⏲️)</option>
+                <option value="Motion">Motion Sensor (🏃)</option>
+                <option value="Gas">Gas Sensor (☁️)</option>
+              </select>
+              <button onclick="addSensor()">+ Provision Sensor</button>
+            </div>
+          </section>
+
+          <!-- Simulated Sensor Cards Grid -->
+          <section
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+              flex-grow: 1;
+            "
+          >
+            <h3
+              style="
+                font-size: 16px;
+                font-weight: 700;
+                color: #1b1a3f;
+                margin-bottom: 5px;
+              "
+            >
+              Configured Devices
+            </h3>
+
+            <div id="sensorList" class="sensor-grid">
+              <!-- Dynamic cards injected via script.js -->
+            </div>
+
+            <p id="emptyMsg" class="empty-msg" style="display: none">
+              No simulated hardware sensors provisioned. Use the tool above to
+              add your first device!
+            </p>
+          </section>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+          <div class="profile-section">
+            <div class="profile-icons">
+              <button class="icon-btn" onclick="alert('No new chats.')">
+                💬
+              </button>
+              <button class="icon-btn" onclick="alert('All systems normal.')">
+                🔔
+              </button>
+            </div>
+            <div class="profile-avatar">
+              <img src="/static/avatar.png" alt="Annie Avatar" />
+            </div>
+            <div class="profile-welcome">
+              <h4>Welcome Annie!</h4>
+              <p>Smart Hub Administrator</p>
+            </div>
+          </div>
+
+          <!-- Quick Add device triggers -->
+          <div class="my-devices-section">
+            <div class="section-header">
+              <h5>Provision Shortcuts</h5>
+              <span class="more-options">•••</span>
+            </div>
+            <div class="devices-quick-grid">
+              <div
+                class="quick-device-card ac"
+                onclick="quickAdd('Temperature')"
+              >
+                <div class="device-icon">❄️</div>
+                <span class="device-name">+ Temp Sensor</span>
+              </div>
+
+              <div
+                class="quick-device-card router"
+                onclick="quickAdd('Humidity')"
+              >
+                <div class="device-icon">🌐</div>
+                <span class="device-name">+ Humid Sensor</span>
+              </div>
+
+              <div class="quick-device-card music" onclick="quickAdd('Motion')">
+                <div class="device-icon">🔊</div>
+                <span class="device-name">+ Motion Sensor</span>
+              </div>
+
+              <div
+                class="quick-device-card lamps"
+                onclick="quickAdd('Pressure')"
+              >
+                <div class="device-icon">💡</div>
+                <span class="device-name">+ Press Sensor</span>
+              </div>
+              <div class="quick-device-card gas" onclick="quickAdd('Gas')">
+                <div class="device-icon">☁️</div>
+                <span class="device-name">+ Gas Sensor</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="illustration-section">
+            <img
+              src="/static/relax_illustration.png"
+              alt="Relaxing in Smart Home"
+            />
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+      // Set dynamic date
+      function setLocalDate() {
+        var options = {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        };
+        var today = new Date();
+        document.getElementById("currentDate").textContent =
+          today.toLocaleDateString("en-US", options);
+      }
+      setLocalDate();
+
+      // Quick add device shortcut helper
+      function quickAdd(type) {
+        document.getElementById("sensorType").value = type;
+        addSensor();
+      }
+    </script>
+  </body>
+</html>
