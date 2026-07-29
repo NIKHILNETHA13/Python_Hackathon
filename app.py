@@ -9,6 +9,7 @@ from sensor import SensorDevice, SENSOR_REGISTRY
 from hub import IoTHub
 from automation import AutomationController
 from events import EventLog
+import os
 
 app = Flask(__name__)
 
@@ -21,9 +22,19 @@ hub = IoTHub("My IoT Hub")
 # Global event log
 event_log = EventLog()
 
-# Start automation controller with event logging
+# Start automation controller with event logging (deferred start)
 automation = AutomationController(hub, event_log=event_log)
-automation.start()
+
+
+@app.before_first_request
+def _start_automation():
+    # Start automation loop when the first request arrives in this process.
+    try:
+        if not getattr(automation, '_running', False):
+            automation.start()
+            print(f"[automation] started in PID {os.getpid()}")
+    except Exception:
+        pass
 
 # Counters and prefixes generated dynamically
 id_counters = {}
@@ -244,4 +255,6 @@ def api_automation_toggle():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # When running locally via `python app.py` keep previous behavior.
+    automation.start()
+    app.run(host='0.0.0.0', debug=True)
