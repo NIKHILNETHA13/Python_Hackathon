@@ -26,15 +26,26 @@ event_log = EventLog()
 automation = AutomationController(hub, event_log=event_log)
 
 
-@app.before_first_request
+_automation_started = False
+
 def _start_automation():
-    # Start automation loop when the first request arrives in this process.
+    """Start the automation loop once per process."""
+    global _automation_started
+    if _automation_started:
+        return
     try:
         if not getattr(automation, '_running', False):
             automation.start()
             print(f"[automation] started in PID {os.getpid()}")
     except Exception:
         pass
+    _automation_started = True
+
+# Register start hook: prefer `before_first_request` but fall back to `before_request`
+if hasattr(app, 'before_first_request'):
+    app.before_first_request(_start_automation)
+else:
+    app.before_request(_start_automation)
 
 # Counters and prefixes generated dynamically
 id_counters = {}
