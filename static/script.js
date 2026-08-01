@@ -2,6 +2,7 @@
 
 var allSensors = [];
 var sensorTypesMeta = {}; // name -> metadata from server
+var currentDeviceId = null;
 
 // ── Add Sensor ───────────────────────────────────────────────
 function addSensor() {
@@ -61,6 +62,112 @@ function updateSensor(id) {
   .catch(function(err) {
     console.error("Error updating sensor:", err);
   });
+}
+
+// ── Device Management CRUD ──────────────────────────────────
+function resetDeviceForm() {
+  document.getElementById('deviceId').value = '';
+  document.getElementById('deviceName').value = '';
+  document.getElementById('deviceType').value = 'Temperature';
+  document.getElementById('deviceLocation').value = '';
+  document.getElementById('deviceStatus').value = 'Active';
+  currentDeviceId = null;
+}
+
+function submitDeviceForm() {
+  var payload = {
+    device_name: document.getElementById('deviceName').value.trim(),
+    device_type: document.getElementById('deviceType').value,
+    location: document.getElementById('deviceLocation').value.trim(),
+    status: document.getElementById('deviceStatus').value
+  };
+
+  if (!payload.device_name) {
+    alert('Please enter a device name.');
+    return;
+  }
+
+  var url = '/api/devices';
+  var method = 'POST';
+  if (currentDeviceId) {
+    url = '/api/devices/' + currentDeviceId;
+    method = 'PUT';
+  }
+
+  fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(response) { return response.json(); })
+  .then(function() {
+    resetDeviceForm();
+    loadDeviceManagement();
+    loadSensors();
+  })
+  .catch(function(err) {
+    console.error('Error saving device:', err);
+  });
+}
+
+function editDevice(device) {
+  currentDeviceId = device.device_id;
+  document.getElementById('deviceId').value = device.device_id;
+  document.getElementById('deviceName').value = device.device_name || '';
+  document.getElementById('deviceType').value = device.device_type || 'Temperature';
+  document.getElementById('deviceLocation').value = device.location || '';
+  document.getElementById('deviceStatus').value = device.status || 'Active';
+  document.getElementById('deviceName').focus();
+}
+
+function deleteDevice(deviceId) {
+  if (!confirm('Delete this device and its history?')) return;
+  fetch('/api/devices/' + deviceId, { method: 'DELETE' })
+    .then(function(response) { return response.json(); })
+    .then(function() {
+      loadDeviceManagement();
+      loadSensors();
+    })
+    .catch(function(err) {
+      console.error('Error deleting device:', err);
+    });
+}
+
+function renderDeviceManagement(list) {
+  var container = document.getElementById('deviceList');
+  if (!container) return;
+  if (!list || list.length === 0) {
+    container.innerHTML = '<p class="empty-msg">No devices stored in PostgreSQL yet.</p>';
+    return;
+  }
+
+  var html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">' +
+    '<thead><tr><th style="text-align:left; padding:6px 4px;">Name</th><th style="text-align:left; padding:6px 4px;">Type</th><th style="text-align:left; padding:6px 4px;">Location</th><th style="text-align:left; padding:6px 4px;">Status</th><th style="text-align:left; padding:6px 4px;">Actions</th></tr></thead><tbody>';
+
+  list.forEach(function(device) {
+    html += '<tr>' +
+      '<td style="padding:6px 4px;">' + (device.device_name || '') + '</td>' +
+      '<td style="padding:6px 4px;">' + (device.device_type || '') + '</td>' +
+      '<td style="padding:6px 4px;">' + (device.location || '-') + '</td>' +
+      '<td style="padding:6px 4px;">' + (device.status || 'Active') + '</td>' +
+      '<td style="padding:6px 4px;"><button class="btn-update" style="padding:6px 10px; margin-right:6px;" onclick="editDevice(' + JSON.stringify(device) + ')">Edit</button>' +
+      '<button class="btn-remove" style="padding:6px 10px;" onclick="deleteDevice(' + device.device_id + ')">Delete</button></td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function loadDeviceManagement() {
+  fetch('/api/devices')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      renderDeviceManagement(data.devices || []);
+    })
+    .catch(function(err) {
+      console.error('Error loading devices:', err);
+    });
 }
 
 // ── Search Filtering ──────────────────────────────────────────
@@ -214,5 +321,7 @@ function loadSensorTypes() {
 // Run immediately on page load
 loadSensors();
 loadSensorTypes();
+loadDeviceManagement();
+resetDeviceForm();
 // Polling for simulator is turned off to prevent input focus resets, 
 // but updates will refresh lists on edits.

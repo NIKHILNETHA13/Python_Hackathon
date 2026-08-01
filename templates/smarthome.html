@@ -27,15 +27,19 @@
           </header>
 
           <section>
-            <h2 class="section-title">Smart Home Live View</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <h2 class="section-title" style="margin:0;">Living Room Smart Dashboard</h2>
+              <button onclick="resetPage()" style="background:#e74c3c;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;">🗑️ Reset Page</button>
+            </div>
             <div class="smarthome-layout">
+
               <div class="sensor-column">
-                <h3>Live Sensors</h3>
+                <h3>Room Sensors</h3>
                 <div id="liveSensors" class="sensor-grid smarthome-grid"></div>
               </div>
 
               <div class="appliance-column">
-                <h3>Smart Appliances</h3>
+                <h3>Room Appliances</h3>
                 <div id="gasBanner" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;background:#ffecec;color:#7a0b0b;font-weight:700"></div>
                 <div id="appliances" class="devices-quick-grid"></div>
                 <h4 style="margin-top:16px">Event Timeline</h4>
@@ -43,6 +47,7 @@
               </div>
             </div>
           </section>
+
 
         </main>
 

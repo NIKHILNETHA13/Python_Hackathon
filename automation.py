@@ -76,12 +76,19 @@ class AutomationController:
         for d in devices:
             by_name.setdefault(d.get_name(), []).append(d)
 
-        # Helper to get first reading value raw (without unit)
+        # Helper to parse numeric values from readings (e.g., '40 °C' -> 40.0)
+        import re
+
+        def parse_number(val):
+            if val is None:
+                return None
+            match = re.search(r"[-+]?\d*\.?\d+", str(val))
+            return float(match.group()) if match else None
+
+        # Helper to read sensor from hub device objects
         def raw_value(sensor):
-            # sensor is SensorDevice
             try:
-                val = sensor.get_reading()
-                return val
+                return sensor.get_reading()
             except Exception:
                 return None
 
@@ -92,7 +99,8 @@ class AutomationController:
             rv = raw_value(m)
             if rv is None:
                 continue
-            if str(rv) == '1' or str(rv).lower() in ('motion detected', 'true'):
+            rv_str = str(rv).strip().lower()
+            if rv_str in ('1', 'true', 'motion detected', 'occupied', 'motion'):
                 motion_detected = True
                 break
 
@@ -100,35 +108,24 @@ class AutomationController:
         temp_devices = by_name.get('Temperature', [])
         temp_val = None
         if temp_devices:
-            try:
-                temp_val = float(temp_devices[0].get_reading())
-            except Exception:
-                temp_val = None
+            temp_val = parse_number(raw_value(temp_devices[0]))
 
         # Light lux
         light_devices = by_name.get('Light', [])
         light_lux = None
         if light_devices:
-            try:
-                light_lux = float(light_devices[0].get_reading())
-            except Exception:
-                light_lux = None
+            light_lux = parse_number(raw_value(light_devices[0]))
 
         # Gas ppm
         gas_devices = by_name.get('Gas', [])
         gas_ppm = None
         if gas_devices:
-            try:
-                gas_ppm = float(gas_devices[0].get_reading())
-            except Exception:
-                gas_ppm = None
+            gas_ppm = parse_number(raw_value(gas_devices[0]))
 
         # Determine gas tier
         prev_gas_status = self.gas_status
         self.gas_ppm = gas_ppm
-        if gas_ppm is None:
-            self.gas_status = 'Normal'
-        elif gas_ppm <= 300:
+        if gas_ppm is None or gas_ppm <= 300:
             self.gas_status = 'Normal'
         elif gas_ppm <= 600:
             self.gas_status = 'Warning'
@@ -149,22 +146,22 @@ class AutomationController:
                         # log change
                         self._log('🔁', f"{name} set to {'ON' if new_state else 'OFF'} by automation")
 
-            # AC: Motion detected AND Temperature > 30 => ON
-            apply_change('AC', bool(motion_detected and temp_val is not None and temp_val > 30))
+            # AC: Temp > 30°C => ON (High priority cooling for room)
+            ac_should_be_on = bool(temp_val is not None and temp_val > 30)
+            apply_change('AC', ac_should_be_on)
 
-            # Fan: Motion detected AND 26 <= Temp <= 30 => ON
-            apply_change('Fan', bool(motion_detected and temp_val is not None and 26 <= temp_val <= 30))
+            # Fan: 26°C <= Temp <= 30°C => ON (Moderate cooling when AC is not needed)
+            fan_should_be_on = bool(temp_val is not None and 26 <= temp_val <= 30 and not ac_should_be_on)
+            apply_change('Fan', fan_should_be_on)
 
-            # Lights: Motion detected AND Light < 300 => ON
-            apply_change('Lights', bool(motion_detected and light_lux is not None and light_lux < 300))
+            # Lights: Motion detected OR Light < 300 lx => ON
+            lights_should_be_on = bool(motion_detected or (light_lux is not None and light_lux < 300))
+            apply_change('Lights', lights_should_be_on)
 
             # Gas handling by tiers
-            # If Danger and we newly entered Danger, force Exhaust Fan and Alarm on (auto only) and log events
             if self.gas_status == 'Danger' and prev_gas_status != 'Danger':
-                # log gas level and leak
                 self._log('💨', f"Gas level {gas_ppm} ppm")
                 self._log('⚠️', "Gas leak detected")
-                # set Exhaust Fan and Alarm ON
                 if 'Exhaust Fan' in self.appliances:
                     app = self.appliances['Exhaust Fan']
                     if app['mode'] == 'auto' and not app['state']:
@@ -176,9 +173,9 @@ class AutomationController:
                         app['state'] = True
                         self._log('🔔', 'Alarm activated')
             else:
-                # In non-danger situations, update exhaust/alarm based on lower tiers
                 apply_change('Exhaust Fan', bool(gas_ppm is not None and gas_ppm > 400))
                 apply_change('Alarm', bool(gas_ppm is not None and gas_ppm > 1000))
+
 
     # API helpers
     def list_appliances(self):

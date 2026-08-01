@@ -29,24 +29,35 @@ function renderLiveSensors() {
   var container = document.getElementById('liveSensors');
   container.innerHTML = '';
   var q = document.getElementById('searchBox') ? document.getElementById('searchBox').value.toLowerCase() : '';
+  var iconMap = {
+    'Temperature': '🌡️',
+    'Humidity': '💧',
+    'Pressure': '⏲️',
+    'Motion': '🏃',
+    'Light': '💡',
+    'Gas': '💨'
+  };
+
   automationState.sensors.forEach(function(s) {
     if (q && s.name.toLowerCase().indexOf(q) === -1 && s.id.toLowerCase().indexOf(q) === -1) return;
     var card = document.createElement('div');
     card.className = 'sensor-card';
+    var icon = iconMap[s.name] || '🔌';
     card.innerHTML = '<div class="sensor-header">' +
-      '<div class="sensor-title">' +
-        '<span class="room-icon">'+(s.name||'')+'</span>' +
+      '<div class="sensor-title" style="display:flex;align-items:center;gap:8px;">' +
+        '<span class="room-icon" style="font-size:20px;">' + icon + '</span>' +
         '<div class="sensor-label">' +
-          '<div class="sensor-name">'+s.name+' Sensor</div>' +
-          '<div class="sensor-subtitle">'+s.id+'</div>' +
+          '<div class="sensor-name" style="font-weight:700;">' + s.name + ' Sensor</div>' +
+          '<div class="sensor-subtitle" style="font-size:11px;color:#7f8c8d;">' + s.id + ' • Living Room</div>' +
         '</div>' +
       '</div>' +
-      '<span class="badge '+(s.status==='Active' ? 'badge-active' : s.status==='Offline' ? 'badge-offline' : 'badge-low')+'">'+s.status+'</span>' +
+      '<span class="badge ' + (s.status === 'Active' ? 'badge-active' : s.status === 'Offline' ? 'badge-offline' : 'badge-low') + '">' + s.status + '</span>' +
       '</div>' +
-      '<div class="sensor-reading">'+s.reading+'</div>';
+      '<div class="sensor-reading" style="font-size:22px;font-weight:800;margin-top:12px;color:#2c3e50;">' + s.reading + '</div>';
     container.appendChild(card);
   });
 }
+
 
 function renderAppliances() {
   var container = document.getElementById('appliances');
@@ -87,8 +98,22 @@ fetchAutomationState();
 setInterval(fetchAutomationState, 1500);
 setInterval(fetchEvents, 1500);
 
+function resetPage() {
+  if (!confirm("Are you sure you want to reset and clear all room sensors from the page and database?")) return;
+  fetch('/api/reset_db', { method: 'POST' })
+    .then(function(res) { return res.json(); })
+    .then(function() {
+      fetchAutomationState();
+      fetchEvents();
+    })
+    .catch(function(err) {
+      console.error("Error resetting page:", err);
+    });
+}
+
 // Request notification permission early
 if (window.Notification && Notification.permission !== 'granted') {
+
   try { Notification.requestPermission(); } catch(e) {}
 }
 

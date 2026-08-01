@@ -100,6 +100,38 @@
             </div>
           </section>
 
+          <!-- Device Management Panel -->
+          <section class="simulator-form-card" style="margin-top: 4px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #1b1a3f; margin-bottom: 8px;">
+              Device Management
+            </h3>
+            <form id="deviceForm" class="form-row" onsubmit="event.preventDefault(); submitDeviceForm();">
+              <input type="hidden" id="deviceId" value="" />
+              <label for="deviceName">Device Name</label>
+              <input id="deviceName" placeholder="e.g. Living Room Temp" />
+              <label for="deviceType">Type</label>
+              <select id="deviceType">
+                <option value="Temperature">Temperature</option>
+                <option value="Humidity">Humidity</option>
+                <option value="Pressure">Pressure</option>
+                <option value="Motion">Motion</option>
+                <option value="Light">Light</option>
+                <option value="Gas">Gas</option>
+              </select>
+              <label for="deviceLocation">Location</label>
+              <input id="deviceLocation" placeholder="Living Room" />
+              <label for="deviceStatus">Status</label>
+              <select id="deviceStatus">
+                <option value="Active">Active</option>
+                <option value="Offline">Offline</option>
+                <option value="Low Battery">Low Battery</option>
+              </select>
+              <button type="submit">Save Device</button>
+              <button type="button" class="btn-remove" onclick="resetDeviceForm()">Reset</button>
+            </form>
+            <div id="deviceList" class="device-manager-list" style="margin-top: 16px;"></div>
+          </section>
+
           <!-- Simulated Sensor Cards Grid -->
           <section
             style="
