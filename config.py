@@ -19,14 +19,15 @@ def get_database_config():
     Returns database configuration dictionary.
     Supports 'sqlite' and 'postgres'.
     """
-    database_url = os.getenv("DATABASE_URL")
-    db_engine = os.getenv("DB_ENGINE", "").lower()
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    db_engine = os.getenv("DB_ENGINE", "").lower().strip()
 
     if database_url and ("postgres" in database_url or "postgresql" in database_url):
         dsn = database_url
         if dsn.startswith("postgres://"):
             dsn = dsn.replace("postgres://", "postgresql://", 1)
         return {"engine": "postgres", "kwargs": {"dsn": dsn}}
+
 
 
     if db_engine in ("postgres", "postgresql") or (not db_engine and os.getenv("POSTGRES_HOST")):
